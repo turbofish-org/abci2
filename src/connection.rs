@@ -2,7 +2,7 @@ use std::io::{Read, Write, Error, ErrorKind};
 use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread::{JoinHandle, spawn};
-use protobuf::{CodedInputStream, CodedOutputStream};
+use protobuf::Message;
 use crate::error::Result;
 use crate::messages::abci::{Request, Response};
 
@@ -85,29 +85,35 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
     // TODO: turn panics into errors that get passed to error channel
 
     loop {
-        let req_length = read_varint(&mut socket).unwrap() as usize;
-        if req_length > MAX_MESSAGE_LENGTH {
-            let message = format!("Incoming ABCI request exceeds maximum length ({})", req_length).to_string();
+        let length = read_varint(&mut socket).unwrap() as usize;
+        if length > MAX_MESSAGE_LENGTH {
+            let message = format!("Incoming ABCI request exceeds maximum length ({})", length).to_string();
             sender.send(Err(
                 Error::new(ErrorKind::InvalidData, message).into()
             ));
             return;
         }
 
-        socket.read_exact(&mut buf[..req_length]).unwrap();
+        socket.read_exact(&mut buf[..length]).unwrap();
 
-        let req: Request = protobuf::parse_from_bytes(&buf[..req_length]).unwrap();
+        let req: Request = protobuf::parse_from_bytes(&buf[..length]).unwrap();
         sender.send(Ok(req));
     }
 }
 
 fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
-    let mut stream = CodedOutputStream::new(&mut socket);
-
     let mut write_response = || -> Result<()> {
         let res: Response = receiver.recv()?;
-        println!("writing response: {:?}", res);
-        stream.write_message_no_tag(&res)?;
+        println!("writing response: {:?}", res); // TODO: remove
+
+        let mut buf = [0 as u8; 8];
+        let length = res.compute_size() as i64;
+        let varint_length = encode_varint(&mut buf, length);
+        println!("writing varint ({}): {:?}", length, &buf[..varint_length]);
+        socket.write(&buf[..varint_length])?;
+
+        res.write_to_writer(&mut socket)?;
+
         Ok(())
     };
     
@@ -148,4 +154,23 @@ fn read_varint<R: Read>(reader: &mut R) -> Result<i64> {
     // ZigZag encoding, from integer-encoding crate
     // (https://github.com/dermesser/integer-encoding-rs/blob/e9b21fa87ef309f3f4242caa79ea010e20c2f224/src/varint.rs#L57-L63)
     Ok(((value >> 1) ^ (-((value & 1) as i64)) as u64) as i64)
+}
+
+fn encode_varint(buf: &mut [u8; 8], value: i64) -> usize {
+    // ZigZag encoding
+    let mut value = ((value << 1) ^ (value >> 63)) as u64;
+
+    for i in 0..8 {
+        buf[i] = 0b0111_1111 & (value as u8);
+
+        let done = value <= 0b0111_1111;
+        if done {
+            return i + 1;
+        }
+
+        buf[i] |= 0b1000_0000;
+        value >>= 7;
+    }
+
+    unreachable!("VarInt should not be longer than 8 bytes");
 }
