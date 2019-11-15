@@ -38,8 +38,8 @@ impl Connection {
         })
     }
 
-    pub fn read(&self) -> Request {
-        self.read_channel.recv().unwrap().unwrap() // TODO: return result
+    pub fn read(&self) -> Result<Request> {
+        Ok(self.read_channel.recv()??)
     }
 
     pub fn write(&self, res: Response) -> Result<()> {

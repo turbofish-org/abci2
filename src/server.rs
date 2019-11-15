@@ -28,7 +28,7 @@ mod tests {
     fn server() {
         fn handle_connection(i: usize, conn: Connection) {
             std::thread::spawn(move || loop {
-                let req = conn.read();
+                let req = conn.read().unwrap();
                 println!("got request on connection {}: {:?}", i, req);
 
                 match req.value {
