@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 protobuf = "2.8.1"
+integer-encoding = "1.0.7"
 
 [build-dependencies]
 protobuf-codegen-pure = "2.8.1"
