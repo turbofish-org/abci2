@@ -39,7 +39,17 @@ impl Connection {
     }
 
     pub fn read(&self) -> Request {
-        self.read_channel.recv().unwrap().unwrap() // TODO:
+        self.read_channel.recv().unwrap().unwrap() // TODO: return result
+    }
+
+    pub fn write(&self, res: Response) -> Result<()> {
+        self.write_channel.send(res);
+        // TODO: get last write error?
+        Ok(())
+    }
+
+    pub fn close(mut self) -> Result<()> {
+        self.end()
     }
 
     fn create_reader(socket: TcpStream, capacity: usize) -> (mpsc::Receiver<Result<Request>>, JoinHandle<()>) {
@@ -54,14 +64,14 @@ impl Connection {
         (sender, thread)
     }
 
-    fn close(&mut self) -> Result<()> {
+    fn end(&mut self) -> Result<()> {
         unimplemented!()
     }
 }
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        self.close().expect("Failed to close ABCI connection");
+        self.end().expect("Failed to close ABCI connection");
     }
 }
 
