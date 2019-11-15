@@ -80,14 +80,7 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
             );
         }
 
-        let mut bytes_read = 0;
-        while bytes_read < req_length {
-            let range = bytes_read..req_length;
-            bytes_read += socket.read(&mut buf[range]).unwrap();
-            if bytes_read == 0 {
-                panic!("Unexpected EOF");
-            }
-        }
+        socket.read_exact(&mut buf[..req_length]).unwrap();
 
         let req: Request = protobuf::parse_from_bytes(&buf[..req_length]).unwrap();
         sender.send(Ok(req));
