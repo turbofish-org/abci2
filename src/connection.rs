@@ -84,10 +84,11 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
     loop {
         let req_length = read_varint(&mut socket).unwrap() as usize;
         if req_length > MAX_MESSAGE_LENGTH {
-            panic!(
-                "Incoming ABCI request exceeds maximum length ({})",
-                req_length
-            );
+            let message = format!("Incoming ABCI request exceeds maximum length ({})", req_length).to_string();
+            sender.send(Err(
+                Error::new(ErrorKind::InvalidData, message).into()
+            ));
+            return;
         }
 
         socket.read_exact(&mut buf[..req_length]).unwrap();
@@ -99,9 +100,18 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
 
 fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
     let mut stream = CodedOutputStream::new(&mut socket);
+
+    let mut write_response = || -> Result<()> {
+        let res: Response = receiver.recv()?;
+        println!("writing response: {:?}", res);
+        stream.write_message_no_tag(&res)?;
+        Ok(())
+    };
+    
     loop {
-        let res: Response = receiver.recv().unwrap();
-        stream.write_message_no_tag(&res).unwrap(); // TODO: bubble up error
+        if let Err(err) = write_response() {
+            panic!(err) // TODO: send in error channel
+        }
     }
 }
 
@@ -111,12 +121,18 @@ fn read_varint<R: Read>(reader: &mut R) -> Result<i64> {
 
     for i in 0..=8 {
         if i == 8 {
-            panic!("VarInt exceeded size"); // TODO: return error
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "VarInt exceeded maximum length".to_string()
+            ).into());
         }
 
         let bytes_read = reader.read(&mut buf)?;
         if bytes_read == 0 {
-            return Err(Error::from(ErrorKind::UnexpectedEof).into());
+            return Err(Error::new(
+                ErrorKind::UnexpectedEof,
+                "Unexpected EOF".to_string()
+            ).into());
         }
 
         let part = 0b0111_1111 & buf[0];
