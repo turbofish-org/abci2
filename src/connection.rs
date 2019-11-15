@@ -65,7 +65,10 @@ impl Connection {
     }
 
     fn end(&mut self) -> Result<()> {
-        unimplemented!()
+        self.socket.shutdown(std::net::Shutdown::Both)?;
+        // read and write threads will end as the socket will now error when
+        // trying to use the socket or channels, whichever happens first
+        Ok(())
     }
 }
 
