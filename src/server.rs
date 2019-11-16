@@ -16,6 +16,12 @@ impl Server {
         println!("accepted connection from {}", stream.peer_addr()?);
         Connection::new(stream)
     }
+
+    pub fn accept_buffered(&self, capacity: usize) -> Result<Connection> {
+        let stream = self.0.incoming().next().unwrap()?;
+        println!("accepted connection from {}", stream.peer_addr()?);
+        Connection::buffered(stream, capacity)
+    }
 }
 
 
