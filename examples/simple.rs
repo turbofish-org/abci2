@@ -1,7 +1,7 @@
 use abci2::messages::abci;
 use abci2::{Server, Connection};
 
-// you can run this example by doing `cargo run simple-example`
+// you can run this example by doing `cargo run --example simple`
 
 fn main() {
     // start listening

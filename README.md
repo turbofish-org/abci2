@@ -7,6 +7,8 @@
 
 This crate provides low-level access to the ABCI protocol, via a `Connection` type which exposes `read()` and `write()` methods which return or accept ABCI request or response structs.
 
+Currently supports **Tendermint 0.32**.
+
 ## Usage
 
 **Add this crate as a dependency:**
@@ -37,4 +39,8 @@ loop {
 }
 ```
 
-For a more complete example, see [examples/simple.rs](https://github.com/nomic-io/abci2/blob/master/examples/simple.rs) (you can run it via `cargo run simple-example`).
+For a more complete example, see [examples/simple.rs](https://github.com/nomic-io/abci2/blob/master/examples/simple.rs) (you can run it via `cargo run --example simple`).
+
+## Rebuild Protobuf
+
+If you are updating this crate to protobuf definitions for a newer version of Tendermint, you can regenerate the code by running: `cargo run --bin codegen --features codegen`.
