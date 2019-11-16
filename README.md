@@ -14,7 +14,7 @@ Currently supports **Tendermint 0.32**.
 **Add this crate as a dependency:**
 ```
 [dependencies]
-abci2 = "0.1.0"
+abci2 = "0.1"
 ```
 
 **Example:**
