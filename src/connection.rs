@@ -104,12 +104,10 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
 fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
     let mut write_response = || -> Result<()> {
         let res: Response = receiver.recv()?;
-        println!("writing response: {:?}", res); // TODO: remove
 
         let mut buf = [0 as u8; 8];
         let length = res.compute_size() as i64;
         let varint_length = encode_varint(&mut buf, length);
-        println!("writing varint ({}): {:?}", length, &buf[..varint_length]);
         socket.write(&buf[..varint_length])?;
 
         res.write_to_writer(&mut socket)?;
