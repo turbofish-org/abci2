@@ -8,7 +8,6 @@ license = "MIT"
 
 [dependencies]
 protobuf = "2.8.1"
-integer-encoding = "1.0.7"
 protobuf-codegen-pure = { version = "2.8.1", optional = true }
 
 [features]
