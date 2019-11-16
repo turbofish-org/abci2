@@ -1,7 +1,7 @@
 use std::io::{Read, Write, Error, ErrorKind};
 use std::net::TcpStream;
 use std::sync::mpsc;
-use std::thread::{JoinHandle, spawn};
+use std::thread::spawn;
 use protobuf::Message;
 use crate::error::Result;
 use crate::messages::abci::{Request, Response};
@@ -11,8 +11,6 @@ pub const MAX_MESSAGE_LENGTH: usize = 256 * 1024; // TODO: make configurable?
 pub struct Connection {
     read_channel: mpsc::Receiver<Result<Request>>,
     write_channel: mpsc::SyncSender<Response>,
-    read_thread: JoinHandle<()>,
-    write_thread: JoinHandle<()>,
     socket: TcpStream
     // TODO: make generic for io::Read/Write
 }
@@ -24,27 +22,27 @@ impl Connection {
 
     pub fn buffered(socket: TcpStream, capacity: usize) -> Result<Self> {
         let read_socket = socket.try_clone()?;
-        let (read_channel, read_thread) = Self::create_reader(read_socket, capacity);
+        let read_channel = Self::create_reader(read_socket, capacity);
 
         let write_socket = socket.try_clone()?;
-        let (write_channel, write_thread) = Self::create_writer(write_socket, capacity);
+        let write_channel = Self::create_writer(write_socket, capacity);
 
         Ok(Connection {
             read_channel,
             write_channel,
-            read_thread,
-            write_thread,
             socket
         })
     }
 
     pub fn read(&self) -> Result<Request> {
         Ok(self.read_channel.recv()??)
+        // TODO: close connection if there was an error
     }
 
     pub fn write(&self, res: Response) -> Result<()> {
-        self.write_channel.send(res);
+        self.write_channel.send(res)?;
         // TODO: get last write error?
+        // TODO: close connection if there was an error
         Ok(())
     }
 
@@ -52,21 +50,21 @@ impl Connection {
         self.end()
     }
 
-    fn create_reader(socket: TcpStream, capacity: usize) -> (mpsc::Receiver<Result<Request>>, JoinHandle<()>) {
+    fn create_reader(socket: TcpStream, capacity: usize) -> mpsc::Receiver<Result<Request>> {
         let (sender, receiver) = mpsc::sync_channel(capacity);
-        let thread = spawn(move || read(socket, sender));
-        (receiver, thread)
+        spawn(move || read(socket, sender));
+        receiver
     }
 
-    fn create_writer(socket: TcpStream, capacity: usize) -> (mpsc::SyncSender<Response>, JoinHandle<()>) {
+    fn create_writer(socket: TcpStream, capacity: usize) -> mpsc::SyncSender<Response> {
         let (sender, receiver) = mpsc::sync_channel(capacity);
-        let thread = spawn(move || write(socket, receiver));
-        (sender, thread)
+        spawn(move || write(socket, receiver));
+        sender
     }
 
     fn end(&mut self) -> Result<()> {
         self.socket.shutdown(std::net::Shutdown::Both)?;
-        // read and write threads will end as the socket will now error when
+        // read and write threads will end as the connection will now error when
         // trying to use the socket or channels, whichever happens first
         Ok(())
     }
@@ -74,36 +72,43 @@ impl Connection {
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        self.end().expect("Failed to close ABCI connection");
+        match self.end() {
+            // swallow NotConnected errors since we want to disconnect anyway
+            Err(crate::error::Error::IO(err))
+                if err.kind() == ErrorKind::NotConnected => {},
+
+            Err(err) => panic!(err),
+            _ => {}
+        };
     }
 }
 
 fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
     let mut buf = [0 as u8; MAX_MESSAGE_LENGTH];
-    let mut length = 0;
 
-    // TODO: turn panics into errors that get passed to error channel
-
-    loop {
-        let length = read_varint(&mut socket).unwrap() as usize;
+    let mut read_request = || -> Result<Request> {
+        let length = read_varint(&mut socket)? as usize;
         if length > MAX_MESSAGE_LENGTH {
-            let message = format!("Incoming ABCI request exceeds maximum length ({})", length).to_string();
-            sender.send(Err(
-                Error::new(ErrorKind::InvalidData, message).into()
-            ));
-            return;
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                format!("Incoming ABCI request exceeds maximum length ({})", length).to_string()
+            ).into());
         }
 
-        socket.read_exact(&mut buf[..length]).unwrap();
+        socket.read_exact(&mut buf[..length])?;
 
-        let req: Request = protobuf::parse_from_bytes(&buf[..length]).unwrap();
-        sender.send(Ok(req));
+        let req: Request = protobuf::parse_from_bytes(&buf[..length])?;
+        Ok(req)
+    };
+
+    loop {
+        sender.send(read_request()).unwrap(); // TODO: silently exit on error?
     }
 }
 
 fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
     let mut write_response = || -> Result<()> {
-        let res: Response = receiver.recv()?;
+        let res: Response = receiver.recv().unwrap(); // TODO: silently exit on error?
 
         let mut buf = [0 as u8; 8];
         let length = res.compute_size() as i64;

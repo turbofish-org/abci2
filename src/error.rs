@@ -3,9 +3,15 @@
 #[derive(Debug)]
 pub enum Error {
     IO(std::io::Error),
-    MpscRecvError(std::sync::mpsc::RecvError),
+    Mpsc(MpscError),
     Protobuf(protobuf::error::ProtobufError),
     Other(Box<dyn std::error::Error + Send>)
+}
+
+#[derive(Debug)]
+pub enum MpscError {
+    Recv(std::sync::mpsc::RecvError),
+    Send
 }
 
 impl From<std::io::Error> for Error {
@@ -16,7 +22,13 @@ impl From<std::io::Error> for Error {
 
 impl From<std::sync::mpsc::RecvError> for Error {
     fn from(err: std::sync::mpsc::RecvError) -> Self {
-        Error::MpscRecvError(err)
+        Error::Mpsc(MpscError::Recv(err))
+    }
+}
+
+impl<T> From<std::sync::mpsc::SendError<T>> for Error {
+    fn from(_err: std::sync::mpsc::SendError<T>) -> Self {
+        Error::Mpsc(MpscError::Send)
     }
 }
 
