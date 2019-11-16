@@ -11,12 +11,12 @@ impl Server {
     }
 
     pub fn accept(&self) -> Result<Connection> {
-        let stream = self.0.incoming().next().unwrap()?;
+        let (stream, _) = self.0.accept()?;
         Connection::new(stream)
     }
 
     pub fn accept_buffered(&self, capacity: usize) -> Result<Connection> {
-        let stream = self.0.incoming().next().unwrap()?;
+        let (stream, _) = self.0.accept()?;
         Connection::buffered(stream, capacity)
     }
 }
