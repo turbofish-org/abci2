@@ -37,4 +37,4 @@ loop {
 }
 ```
 
-For a more complete example, see [examples/simple.rs](https://github.com/nomic-io/abci2/blob/master/examples/simple.rs).
+For a more complete example, see [examples/simple.rs](https://github.com/nomic-io/abci2/blob/master/examples/simple.rs) (you can run it via `cargo run simple-example`).
