@@ -12,3 +12,7 @@ integer-encoding = "1.0.7"
 
 [build-dependencies]
 protobuf-codegen-pure = "2.8.1"
+
+[[bin]]
+name = "simple-example"
+path = "./examples/simple.rs"

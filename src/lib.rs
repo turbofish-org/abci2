@@ -6,3 +6,4 @@ mod connection;
 pub mod messages;
 
 pub use server::Server;
+pub use connection::Connection;
