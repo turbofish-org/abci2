@@ -6,6 +6,7 @@ use abci2::{Server, Connection};
 fn main() {
     // start listening
     let server = Server::listen("localhost:26658").unwrap();
+    println!("listening for ABCI connections on {}", server.local_addr().unwrap());
 
     // accept the 3 connections Tendermint is going to make, and handle incoming
     // requests in a separate thread for each
