@@ -1,4 +1,4 @@
-use std::net::{TcpListener, ToSocketAddrs};
+use std::net::{TcpListener, ToSocketAddrs, SocketAddr};
 use crate::error::Result;
 use crate::connection::Connection;
 
@@ -18,5 +18,9 @@ impl Server {
     pub fn accept_buffered(&self, capacity: usize) -> Result<Connection> {
         let (stream, _) = self.0.accept()?;
         Connection::buffered(stream, capacity)
+    }
+
+    pub fn local_addr(&self) -> Result<SocketAddr> {
+        Ok(self.0.local_addr()?)
     }
 }
