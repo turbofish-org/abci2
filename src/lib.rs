@@ -3,6 +3,7 @@
 mod error;
 mod server;
 mod connection;
+mod varint;
 pub mod messages;
 
 pub use server::Server;

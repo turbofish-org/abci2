@@ -5,6 +5,7 @@ use std::thread::spawn;
 use protobuf::Message;
 use crate::error::Result;
 use crate::messages::abci::{Request, Response};
+use crate::varint;
 
 pub const MAX_MESSAGE_LENGTH: usize = 256 * 1024; // TODO: make configurable?
 
@@ -87,7 +88,7 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
     let mut buf = [0 as u8; MAX_MESSAGE_LENGTH];
 
     let mut read_request = || -> Result<Request> {
-        let length = read_varint(&mut socket)? as usize;
+        let length = varint::read(&mut socket)? as usize;
         if length > MAX_MESSAGE_LENGTH {
             return Err(Error::new(
                 ErrorKind::InvalidData,
@@ -112,7 +113,7 @@ fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
 
         let mut buf = [0 as u8; 8];
         let length = res.compute_size() as i64;
-        let varint_length = encode_varint(&mut buf, length);
+        let varint_length = varint::encode(&mut buf, length);
         socket.write(&buf[..varint_length])?;
 
         res.write_to_writer(&mut socket)?;
@@ -125,55 +126,4 @@ fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
             panic!(err) // TODO: send in error channel
         }
     }
-}
-
-fn read_varint<R: Read>(reader: &mut R) -> Result<i64> {
-    let mut buf = [0 as u8; 1];
-    let mut value: u64 = 0;
-
-    for i in 0..=8 {
-        if i == 8 {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                "VarInt exceeded maximum length".to_string()
-            ).into());
-        }
-
-        let bytes_read = reader.read(&mut buf)?;
-        if bytes_read == 0 {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEof,
-                "Unexpected EOF".to_string()
-            ).into());
-        }
-
-        let part = 0b0111_1111 & buf[0];
-        value |= (part as u64) << (i * 7);
-
-        let done = (0b1000_0000 & buf[0]) == 0;
-        if done { break }
-    }
-
-    // ZigZag encoding, from integer-encoding crate
-    // (https://github.com/dermesser/integer-encoding-rs/blob/e9b21fa87ef309f3f4242caa79ea010e20c2f224/src/varint.rs#L57-L63)
-    Ok(((value >> 1) ^ (-((value & 1) as i64)) as u64) as i64)
-}
-
-fn encode_varint(buf: &mut [u8; 8], value: i64) -> usize {
-    // ZigZag encoding
-    let mut value = ((value << 1) ^ (value >> 63)) as u64;
-
-    for i in 0..8 {
-        buf[i] = 0b0111_1111 & (value as u8);
-
-        let done = value <= 0b0111_1111;
-        if done {
-            return i + 1;
-        }
-
-        buf[i] |= 0b1000_0000;
-        value >>= 7;
-    }
-
-    unreachable!("VarInt should not be longer than 8 bytes");
 }
