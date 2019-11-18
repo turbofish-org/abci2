@@ -1,9 +1,10 @@
-use std::io::{Read, Write, Error, ErrorKind};
+use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread::spawn;
 use protobuf::Message;
-use crate::error::Result;
+use error_chain::bail;
+use crate::error::{Result, Error, ErrorKind};
 use crate::messages::abci::{Request, Response};
 use crate::varint;
 
@@ -75,8 +76,9 @@ impl Drop for Connection {
     fn drop(&mut self) {
         match self.end() {
             // swallow NotConnected errors since we want to disconnect anyway
-            Err(crate::error::Error::IO(err))
-                if err.kind() == ErrorKind::NotConnected => {},
+            Err(Error(ErrorKind::Io(err), _))
+                if err.kind() == std::io::ErrorKind::NotConnected
+                => {},
 
             Err(err) => panic!(err),
             _ => {}
@@ -90,10 +92,7 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
     let mut read_request = || -> Result<Request> {
         let length = varint::read(&mut socket)? as usize;
         if length > MAX_MESSAGE_LENGTH {
-            return Err(Error::new(
-                ErrorKind::InvalidData,
-                format!("Incoming ABCI request exceeds maximum length ({})", length).to_string()
-            ).into());
+            bail!("Incoming ABCI request exceeds maximum length ({})", length);
         }
 
         socket.read_exact(&mut buf[..length])?;
