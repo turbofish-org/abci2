@@ -3,8 +3,8 @@ use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread::spawn;
 use protobuf::Message;
-use error_chain::bail;
-use crate::error::{Result, Error, ErrorKind};
+use failure::bail;
+use crate::error::Result;
 use crate::messages::abci::{Request, Response};
 use crate::varint;
 
@@ -76,9 +76,9 @@ impl Drop for Connection {
     fn drop(&mut self) {
         match self.end() {
             // swallow NotConnected errors since we want to disconnect anyway
-            Err(Error(ErrorKind::Io(err), _))
-                if err.kind() == std::io::ErrorKind::NotConnected
-                => {},
+            // TODO:
+            // Err(err) if err.as_fail() == std::io::ErrorKind::NotConnected
+            //     => {},
 
             Err(err) => panic!(err),
             _ => {}

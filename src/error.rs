@@ -1,11 +1,3 @@
-use crate::messages::abci::Response;
-use error_chain::error_chain;
+pub use failure::Error;
 
-error_chain! {
-    foreign_links {
-        Io(std::io::Error);
-        MpscRecv(std::sync::mpsc::RecvError);
-        MpscSend(std::sync::mpsc::SendError<Response>);
-        Protobuf(protobuf::error::ProtobufError);
-    }
-}
+pub type Result<T> = std::result::Result<T, Error>;

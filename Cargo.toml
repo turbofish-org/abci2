@@ -9,7 +9,7 @@ license = "MIT"
 [dependencies]
 protobuf = "2.8.1"
 protobuf-codegen-pure = { version = "2.8.1", optional = true }
-error-chain = "0.12.1"
+failure = "0.1.6"
 
 [features]
 codegen = ["protobuf-codegen-pure"]
