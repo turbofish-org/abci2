@@ -1,3 +1,3 @@
-pub mod abci; // Core types
+pub mod abci;
 pub mod merkle;
-pub mod types; // Common (KV Pairs)
+pub mod types;

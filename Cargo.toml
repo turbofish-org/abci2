@@ -7,17 +7,8 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
-protobuf = "2.8.1"
-protobuf-codegen-pure = { version = "2.8.1", optional = true }
+protobuf = "=2.10.1"
 failure = "0.1.6"
-
-[features]
-codegen = ["protobuf-codegen-pure"]
-
-[[bin]]
-name = "codegen"
-path = "./codegen.rs"
-required-features = ["codegen"]
 
 [[example]]
 name = "simple"
