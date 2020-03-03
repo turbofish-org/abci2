@@ -2,6 +2,7 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread::spawn;
+use log::trace;
 use protobuf::Message;
 use failure::bail;
 use crate::error::Result;
@@ -42,6 +43,7 @@ impl Connection {
     }
 
     pub fn write(&self, res: Response) -> Result<()> {
+        trace!(">> {:?}", res);
         self.write_channel.send(res)?;
         // TODO: get last write error?
         // TODO: close connection if there was an error
@@ -98,6 +100,7 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
         socket.read_exact(&mut buf[..length])?;
 
         let req: Request = protobuf::parse_from_bytes(&buf[..length])?;
+        trace!("<< {:?}", req);
         Ok(req)
     };
 
