@@ -80,7 +80,7 @@ impl Drop for Connection {
             // TODO:
             // Err(err) if err.as_fail() == std::io::ErrorKind::NotConnected
             //     => {},
-            Err(err) => panic!(err),
+            Err(err) => panic!("{}", err),
             _ => {}
         };
     }
@@ -123,7 +123,7 @@ fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
 
     loop {
         if let Err(err) = write_response() {
-            panic!(err) // TODO: send in error channel
+            panic!("{}", err) // TODO: send in error channel
         }
     }
 }
