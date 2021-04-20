@@ -1,21 +1,20 @@
+use crate::error::Result;
+use crate::varint;
+use failure::bail;
+use log::trace;
+use prost::Message;
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread::spawn;
-use log::trace;
-use protobuf::Message;
-use failure::bail;
-use crate::error::Result;
-use crate::messages::abci::{Request, Response};
-use crate::varint;
+use tendermint_proto::abci::*;
 
 pub const MAX_MESSAGE_LENGTH: usize = 256 * 1024; // TODO: make configurable?
 
 pub struct Connection {
     read_channel: mpsc::Receiver<Result<Request>>,
     write_channel: mpsc::SyncSender<Response>,
-    socket: TcpStream
-    // TODO: make generic for io::Read/Write
+    socket: TcpStream, // TODO: make generic for io::Read/Write
 }
 
 impl Connection {
@@ -33,7 +32,7 @@ impl Connection {
         Ok(Connection {
             read_channel,
             write_channel,
-            socket
+            socket,
         })
     }
 
@@ -81,7 +80,6 @@ impl Drop for Connection {
             // TODO:
             // Err(err) if err.as_fail() == std::io::ErrorKind::NotConnected
             //     => {},
-
             Err(err) => panic!(err),
             _ => {}
         };
@@ -96,10 +94,9 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
         if length > MAX_MESSAGE_LENGTH {
             bail!("Incoming ABCI request exceeds maximum length ({})", length);
         }
-
         socket.read_exact(&mut buf[..length])?;
+        let req = Request::decode(&buf[..length])?;
 
-        let req: Request = protobuf::parse_from_bytes(&buf[..length])?;
         trace!("<< {:?}", req);
         Ok(req)
     };
@@ -112,17 +109,18 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
 fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
     let mut write_response = || -> Result<()> {
         let res: Response = receiver.recv().unwrap(); // TODO: silently exit on error?
-
         let mut buf = [0 as u8; 8];
-        let length = res.compute_size() as i64;
+        let length = res.encoded_len() as i64;
         let varint_length = varint::encode(&mut buf, length);
         socket.write(&buf[..varint_length])?;
 
-        res.write_to_writer(&mut socket)?;
+        let mut buf = vec![];
+        res.encode(&mut buf)?;
+        socket.write(&buf)?;
 
         Ok(())
     };
-    
+
     loop {
         if let Err(err) = write_response() {
             panic!(err) // TODO: send in error channel
