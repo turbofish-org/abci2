@@ -29,51 +29,38 @@ fn handle_connection(i: usize, conn: Connection) {
         let req = conn.read().unwrap();
         println!("got request on connection {}: {:?}", i, req);
         // just send back some empty responses for the messages we'll get
-        let res = match req.value {
+        let value = match req.value {
             Some(request::Value::Info(_)) => {
                 let inner = tendermint_proto::abci::ResponseInfo::default();
-                let value = response::Value::Info(inner);
-                Response {
-                    value: value.into(),
-                }
+                response::Value::Info(inner)
             }
             Some(request::Value::InitChain(_)) => {
                 let inner = tendermint_proto::abci::ResponseInitChain::default();
-                let value = response::Value::InitChain(inner);
-                Response {
-                    value: value.into(),
-                }
+                response::Value::InitChain(inner)
             }
             Some(request::Value::BeginBlock(_)) => {
                 let inner = tendermint_proto::abci::ResponseBeginBlock::default();
-                let value = response::Value::BeginBlock(inner);
-                Response {
-                    value: value.into(),
-                }
+                response::Value::BeginBlock(inner)
             }
             Some(request::Value::EndBlock(_)) => {
                 let inner = tendermint_proto::abci::ResponseEndBlock::default();
-                let value = response::Value::EndBlock(inner);
-                Response {
-                    value: value.into(),
-                }
+                response::Value::EndBlock(inner)
             }
             Some(request::Value::Commit(_)) => {
                 let inner = tendermint_proto::abci::ResponseCommit::default();
-                let value = response::Value::Commit(inner);
-                Response {
-                    value: value.into(),
-                }
+                response::Value::Commit(inner)
             }
             Some(request::Value::Flush(_)) => {
                 let inner = tendermint_proto::abci::ResponseFlush::default();
-                let value = response::Value::Flush(inner);
-                Response {
-                    value: value.into(),
-                }
+                response::Value::Flush(inner)
             }
             _ => panic!("Unhandled request type: {:?}", req),
         };
+
+        let res = Response {
+            value: value.into(),
+        };
+
         println!("sending response on connection {}: {:?}", i, res);
 
         // send the response back to Tendermint
