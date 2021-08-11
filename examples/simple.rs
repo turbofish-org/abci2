@@ -1,7 +1,5 @@
 use abci2::{Connection, Server};
-use tendermint_proto::abci::request;
-use tendermint_proto::abci::response;
-use tendermint_proto::abci::{Request, Response};
+use tendermint_proto::abci::{request, response, Response};
 
 // you can run this example by doing `cargo run --example simple`
 
