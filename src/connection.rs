@@ -1,6 +1,5 @@
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::varint;
-use failure::bail;
 use log::trace;
 use prost::Message;
 use std::io::{Read, Write};
@@ -92,7 +91,10 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
     let mut read_request = || -> Result<Request> {
         let length = varint::read(&mut socket)? as usize;
         if length > MAX_MESSAGE_LENGTH {
-            bail!("Incoming ABCI request exceeds maximum length ({})", length);
+            return Err(Error::Request(format!(
+                "Incoming ABCI request exceeds maximum length ({})",
+                length
+            )));
         }
         socket.read_exact(&mut buf[..length])?;
         let req = Request::decode(&buf[..length])?;
