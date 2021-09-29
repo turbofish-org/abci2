@@ -7,10 +7,10 @@ edition = "2018"
 license = "MIT"
 
 [dependencies]
-failure = "0.1.6"
 log = "0.4.8"
 tendermint-proto = "0.21.0"
 prost = "0.7.0"
+thiserror = "1.0.29"
 
 [[example]]
 name = "simple"
