@@ -8,8 +8,8 @@ license = "MIT"
 
 [dependencies]
 log = "0.4.8"
-tendermint-proto = "0.21.0"
-prost = "0.7.0"
+tendermint-proto = "0.23.5"
+prost = "0.9"
 thiserror = "1.0.29"
 
 [[example]]
