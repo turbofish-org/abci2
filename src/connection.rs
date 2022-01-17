@@ -37,7 +37,7 @@ impl Connection {
     }
 
     pub fn read(&self) -> Result<Request> {
-        Ok(self.read_channel.recv()??)
+        self.read_channel.recv()?
         // TODO: close connection if there was an error
     }
 
@@ -75,19 +75,13 @@ impl Connection {
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        match self.end() {
-            // swallow NotConnected errors since we want to disconnect anyway
-            // TODO:
-            // Err(err) if err.as_fail() == std::io::ErrorKind::NotConnected
-            //     => {},
-            Err(err) => panic!("{}", err),
-            _ => {}
-        };
+        // TODO: swallow NotConnected errors since we want to disconnect anyway
+        self.end().unwrap();
     }
 }
 
 fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
-    let mut buf = [0 as u8; MAX_MESSAGE_LENGTH];
+    let mut buf = [0; MAX_MESSAGE_LENGTH];
 
     let mut read_request = || -> Result<Request> {
         let length = varint::read(&mut socket)? as usize;
@@ -122,14 +116,14 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
 fn write(mut socket: TcpStream, receiver: mpsc::Receiver<Response>) {
     let mut write_response = || -> Result<()> {
         let res: Response = receiver.recv().unwrap(); // TODO: silently exit on error?
-        let mut buf = [0 as u8; 8];
+        let mut buf = [0; 8];
         let length = res.encoded_len() as i64;
         let varint_length = varint::encode(&mut buf, length);
-        socket.write(&buf[..varint_length])?;
+        socket.write_all(&buf[..varint_length])?;
 
         let mut buf = vec![];
         res.encode(&mut buf)?;
-        socket.write(&buf)?;
+        socket.write_all(&buf)?;
 
         Ok(())
     };
