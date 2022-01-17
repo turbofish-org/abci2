@@ -7,6 +7,7 @@ use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread::spawn;
 use tendermint_proto::abci::*;
+use tendermint_proto::abci::request::Value::Info;
 
 pub const MAX_MESSAGE_LENGTH: usize = 256 * 1024; // TODO: make configurable?
 
@@ -98,13 +99,23 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
         }
         socket.read_exact(&mut buf[..length])?;
         let req = Request::decode(&buf[..length])?;
-
         trace!("<< {:?}", req);
         Ok(req)
     };
 
+    let mut saw_info = false;
     loop {
-        sender.send(read_request()).unwrap(); // TODO: silently exit on error?
+        let req = read_request();
+
+        // swallow message decode errors specifically on query connection
+        match req {
+            Ok(Request { value: Some(Info(_)) }) => saw_info = true,
+            Err(_) if saw_info => continue,
+            _ => {}
+        }
+
+         // TODO: silently exit on error?
+        sender.send(req).unwrap();
     }
 }
 
