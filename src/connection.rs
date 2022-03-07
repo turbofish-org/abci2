@@ -6,8 +6,8 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::sync::mpsc;
 use std::thread::spawn;
-use tendermint_proto::abci::*;
 use tendermint_proto::abci::request::Value;
+use tendermint_proto::abci::*;
 
 pub const MAX_MESSAGE_LENGTH: usize = 256 * 1024; // TODO: make configurable?
 
@@ -75,8 +75,11 @@ impl Connection {
 
 impl Drop for Connection {
     fn drop(&mut self) {
-        // TODO: swallow NotConnected errors since we want to disconnect anyway
-        self.end().unwrap();
+        match self.end() {
+            Ok(_) => (),
+            Err(Error::IO(err)) if err.kind() == std::io::ErrorKind::NotConnected => (),
+            Err(e) => Err(e).unwrap(),
+        }
     }
 }
 
@@ -103,14 +106,18 @@ fn read(mut socket: TcpStream, sender: mpsc::SyncSender<Result<Request>>) {
 
         // swallow message decode errors specifically on query connection
         match req {
-            Ok(Request { value: Some(Value::Info(_)) }) => saw_info = true,
+            Ok(Request {
+                value: Some(Value::Info(_)),
+            }) => saw_info = true,
             Err(_) if saw_info => {
-                req = Ok(Request { value: Some(Value::Query(Default::default())) });
-            },
+                req = Ok(Request {
+                    value: Some(Value::Query(Default::default())),
+                });
+            }
             _ => {}
         }
 
-         // TODO: silently exit on error?
+        // TODO: silently exit on error?
         sender.send(req).unwrap();
     }
 }
