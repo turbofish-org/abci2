@@ -15,11 +15,6 @@ impl Server {
         Connection::new(stream)
     }
 
-    pub fn accept_buffered(&self, capacity: usize) -> Result<Connection> {
-        let (stream, _) = self.0.accept()?;
-        Connection::buffered(stream, capacity)
-    }
-
     pub fn local_addr(&self) -> Result<SocketAddr> {
         Ok(self.0.local_addr()?)
     }

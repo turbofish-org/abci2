@@ -21,7 +21,7 @@ fn main() {
     std::thread::park();
 }
 
-fn handle_connection(i: usize, conn: Connection) {
+fn handle_connection(i: usize, mut conn: Connection) {
     // create a thread which reads a request then writes the response in a loop,
     // forever
     std::thread::spawn(move || loop {
