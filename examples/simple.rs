@@ -16,6 +16,7 @@ fn main() {
     handle_connection(1, server.accept().unwrap());
     handle_connection(2, server.accept().unwrap());
     handle_connection(3, server.accept().unwrap());
+    handle_connection(4, server.accept().unwrap());
 
     // this just keeps the main thread from ending and closing the process
     std::thread::park();
