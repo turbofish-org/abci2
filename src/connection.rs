@@ -9,7 +9,7 @@ use std::thread::spawn;
 use tendermint_proto::abci::request::Value;
 use tendermint_proto::abci::*;
 
-pub const MAX_MESSAGE_LENGTH: usize = 256 * 1024; // TODO: make configurable?
+pub const MAX_MESSAGE_LENGTH: usize = 512 * 1024; // TODO: make configurable?
 
 pub struct Connection {
     socket: TcpStream, // TODO: make generic for io::Read/Write
