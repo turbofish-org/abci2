@@ -4,8 +4,6 @@ use log::trace;
 use prost::Message;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::sync::mpsc;
-use std::thread::spawn;
 use tendermint_proto::abci::request::Value;
 use tendermint_proto::abci::*;
 
