@@ -7,21 +7,20 @@ use std::net::TcpStream;
 use tendermint_proto::abci::request::Value;
 use tendermint_proto::abci::*;
 
-pub const MAX_MESSAGE_LENGTH: usize = 2 * 1024 * 1024; // TODO: make configurable?
+pub const MAX_MESSAGE_LENGTH: usize = 4 * 1024 * 1024; // TODO: make configurable?
 
 pub struct Connection {
     socket: TcpStream, // TODO: make generic for io::Read/Write
     saw_info: bool,
+    buf: Vec<u8>,
 }
 
 impl Connection {
     pub fn new(socket: TcpStream) -> Result<Self> {
-        Ok(Connection { socket, saw_info: false })
+        Ok(Connection { socket, saw_info: false, buf: vec![] })
     }
 
     pub fn read(&mut self) -> Result<Request> {
-        let mut buf = [0; MAX_MESSAGE_LENGTH];
-
         let length = varint::read(&mut self.socket)? as usize;
         if length > MAX_MESSAGE_LENGTH {
             return Err(Error::Request(format!(
@@ -30,9 +29,10 @@ impl Connection {
             )));
         }
 
-        self.socket.read_exact(&mut buf[..length])?;
+        self.buf.resize(length, 0);
+        self.socket.read_exact(&mut self.buf[..length])?;
 
-        let mut req = Request::decode(&buf[..length]);
+        let mut req = Request::decode(&self.buf[..length]);
 
         // swallow message decode errors specifically on query connection
         match req {
@@ -59,13 +59,16 @@ impl Connection {
         trace!(">> {:?}", res);
 
         let mut buf = [0; 8];
-        let length = res.encoded_len() as i64;
-        let varint_length = varint::encode(&mut buf, length);
+        let length = res.encoded_len();
+        let varint_length = varint::encode(&mut buf, length as i64);
         self.socket.write_all(&buf[..varint_length])?;
 
-        let mut buf = vec![];
-        res.encode(&mut buf)?;
-        self.socket.write_all(&buf)?;
+        if length > self.buf.capacity() {
+            self.buf.reserve(length - self.buf.capacity());
+        }
+        self.buf.clear();
+        res.encode(&mut self.buf)?;
+        self.socket.write_all(&self.buf[..length])?;
 
         // TODO: close connection if there was an error
 
