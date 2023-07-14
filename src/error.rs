@@ -5,7 +5,7 @@ pub use thiserror::Error;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error(transparent)]
-    TendermintSend(#[from] SendError<tendermint_proto::abci::Response>),
+    TendermintSend(#[from] SendError<tendermint_proto::v0_34::abci::Response>),
     #[error(transparent)]
     ProstEncode(#[from] prost::EncodeError),
     #[error(transparent)]

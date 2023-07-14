@@ -1,5 +1,5 @@
 use abci2::{Connection, Server};
-use tendermint_proto::abci::{request, response, Response};
+use tendermint_proto::v0_34::abci::{request, response, Response};
 
 // you can run this example by doing `cargo run --example simple`
 
@@ -32,27 +32,27 @@ fn handle_connection(i: usize, mut conn: Connection) {
         // just send back some empty responses for the messages we'll get
         let value = match req.value {
             Some(request::Value::Info(_)) => {
-                let inner = tendermint_proto::abci::ResponseInfo::default();
+                let inner = tendermint_proto::v0_34::abci::ResponseInfo::default();
                 response::Value::Info(inner)
             }
             Some(request::Value::InitChain(_)) => {
-                let inner = tendermint_proto::abci::ResponseInitChain::default();
+                let inner = tendermint_proto::v0_34::abci::ResponseInitChain::default();
                 response::Value::InitChain(inner)
             }
             Some(request::Value::BeginBlock(_)) => {
-                let inner = tendermint_proto::abci::ResponseBeginBlock::default();
+                let inner = tendermint_proto::v0_34::abci::ResponseBeginBlock::default();
                 response::Value::BeginBlock(inner)
             }
             Some(request::Value::EndBlock(_)) => {
-                let inner = tendermint_proto::abci::ResponseEndBlock::default();
+                let inner = tendermint_proto::v0_34::abci::ResponseEndBlock::default();
                 response::Value::EndBlock(inner)
             }
             Some(request::Value::Commit(_)) => {
-                let inner = tendermint_proto::abci::ResponseCommit::default();
+                let inner = tendermint_proto::v0_34::abci::ResponseCommit::default();
                 response::Value::Commit(inner)
             }
             Some(request::Value::Flush(_)) => {
-                let inner = tendermint_proto::abci::ResponseFlush::default();
+                let inner = tendermint_proto::v0_34::abci::ResponseFlush::default();
                 response::Value::Flush(inner)
             }
             _ => panic!("Unhandled request type: {:?}", req),
