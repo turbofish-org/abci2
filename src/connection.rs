@@ -18,7 +18,10 @@ pub struct Connection {
 
 impl Connection {
     pub fn new(socket: TcpStream) -> Result<Self> {
-        Ok(Connection { socket, saw_info: false })
+        Ok(Connection {
+            socket,
+            saw_info: false,
+        })
     }
 
     pub fn read(&mut self) -> Result<Request> {
