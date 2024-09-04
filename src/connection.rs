@@ -4,8 +4,8 @@ use log::trace;
 use prost::Message;
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use tendermint_proto::abci::request::Value;
-use tendermint_proto::abci::*;
+use tendermint_proto::v0_34::abci::request::Value;
+use tendermint_proto::v0_34::abci::*;
 
 pub const MAX_MESSAGE_LENGTH: usize = 4 * 1024 * 1024; // TODO: make configurable?
 
@@ -17,7 +17,11 @@ pub struct Connection {
 
 impl Connection {
     pub fn new(socket: TcpStream) -> Result<Self> {
-        Ok(Connection { socket, saw_info: false, buf: vec![] })
+        Ok(Connection {
+            socket,
+            saw_info: false,
+            buf: vec![],
+        })
     }
 
     pub fn read(&mut self) -> Result<Request> {

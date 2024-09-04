@@ -2,8 +2,8 @@
 
 extern crate test;
 
-use protobuf::Message;
 use abci2::messages::abci::*;
+use protobuf::Message;
 
 #[bench]
 fn check_tx_req_decode(b: &mut test::Bencher) {
@@ -13,7 +13,7 @@ fn check_tx_req_decode(b: &mut test::Bencher) {
     req.set_check_tx(check_tx);
 
     let bytes = req.write_to_bytes().unwrap();
-    
+
     b.iter(|| protobuf::parse_from_bytes::<Request>(bytes.as_slice()));
 }
 
@@ -23,6 +23,6 @@ fn check_tx_res_encode(b: &mut test::Bencher) {
     let mut check_tx = ResponseCheckTx::new();
     check_tx.set_code(0);
     res.set_check_tx(check_tx);
-    
+
     b.iter(|| res.write_to_bytes().unwrap());
 }
