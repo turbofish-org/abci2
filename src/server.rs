@@ -1,8 +1,8 @@
-use std::net::{TcpListener, ToSocketAddrs, SocketAddr};
-use crate::error::Result;
 use crate::connection::Connection;
+use crate::error::Result;
+use std::net::{SocketAddr, TcpListener, ToSocketAddrs};
 
-pub struct Server (TcpListener);
+pub struct Server(TcpListener);
 
 impl Server {
     pub fn listen<A: ToSocketAddrs>(addr: A) -> Result<Self> {

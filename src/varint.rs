@@ -1,5 +1,5 @@
-use std::io::{Read, Error, ErrorKind};
 use crate::error::Result;
+use std::io::{Error, ErrorKind, Read};
 
 pub fn read<R: Read>(reader: &mut R) -> Result<i64> {
     let mut buf = [0 as u8; 1];
@@ -8,10 +8,7 @@ pub fn read<R: Read>(reader: &mut R) -> Result<i64> {
     for i in 0..8 {
         let bytes_read = reader.read(&mut buf)?;
         if bytes_read == 0 {
-            return Err(Error::new(
-                ErrorKind::UnexpectedEof,
-                "Unexpected EOF".to_string()
-            ).into());
+            return Err(Error::new(ErrorKind::UnexpectedEof, "Unexpected EOF".to_string()).into());
         }
 
         let part = 0b0111_1111 & buf[0];
@@ -27,8 +24,9 @@ pub fn read<R: Read>(reader: &mut R) -> Result<i64> {
 
     Err(Error::new(
         ErrorKind::InvalidData,
-        "VarInt exceeded maximum length".to_string()
-    ).into())
+        "VarInt exceeded maximum length".to_string(),
+    )
+    .into())
 }
 
 pub fn encode(buf: &mut [u8; 8], value: i64) -> usize {
