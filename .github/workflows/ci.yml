@@ -44,7 +44,7 @@ jobs:
       - name: Use Nightly
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-11-18
+          toolchain: nightly-2022-04-25
           components: rustfmt
           override: true
       - name: Check
@@ -61,7 +61,7 @@ jobs:
       - name: Use Nightly
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-11-18
+          toolchain: nightly-2022-04-25
           components: clippy
           override: true
       - name: Cache
@@ -76,7 +76,8 @@ jobs:
             target/
           key: ${{ runner.os }}-clippy-${{ hashFiles('Cargo.toml') }}
       - name: Check
-        uses: actions-rs/clippy-check@v1
+        uses: giraffate/clippy-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features -- -D warnings
+          clippy_flags: --all-features -- -D warnings
+          reporter: "github-pr-review"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
