@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Use Nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2024-04-25
+          override: true
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.cargo/registry/src/**/librocksdb-sys-*
+            target/
+          key: ${{ runner.os }}-check-${{ hashFiles('Cargo.toml') }}
+      - name: Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Use Nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-11-18
+          components: rustfmt
+          override: true
+      - name: Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Use Nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2022-11-18
+          components: clippy
+          override: true
+      - name: Cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            ~/.cargo/registry/src/**/librocksdb-sys-*
+            target/
+          key: ${{ runner.os }}-clippy-${{ hashFiles('Cargo.toml') }}
+      - name: Check
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features -- -D warnings
