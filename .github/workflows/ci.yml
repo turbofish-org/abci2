@@ -44,7 +44,7 @@ jobs:
       - name: Use Nightly
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-11-18
+          toolchain: nightly-2022-04-25
           components: rustfmt
           override: true
       - name: Check
@@ -61,7 +61,7 @@ jobs:
       - name: Use Nightly
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly-2022-11-18
+          toolchain: nightly-2022-04-25
           components: clippy
           override: true
       - name: Cache
