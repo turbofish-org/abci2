@@ -5,7 +5,7 @@ use std::io::{Error, ErrorKind, Read};
 
 /// Reads a varint from a [Read] implementation.
 pub fn read<R: Read>(reader: &mut R) -> Result<i64> {
-    let mut buf = [0 as u8; 1];
+    let mut buf = [0; 1];
     let mut value: u64 = 0;
 
     for i in 0..8 {
@@ -37,6 +37,8 @@ pub fn encode(buf: &mut [u8; 8], value: i64) -> usize {
     // ZigZag encoding
     let mut value = ((value << 1) ^ (value >> 63)) as u64;
 
+    //TODO: Remove clippy allow when test suite is implemented
+    #[allow(clippy::needless_range_loop)]
     for i in 0..8 {
         buf[i] = 0b0111_1111 & (value as u8);
 
