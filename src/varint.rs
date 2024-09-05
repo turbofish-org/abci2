@@ -1,6 +1,9 @@
+//! Protobuf varint encoding and decoding.
+
 use crate::error::Result;
 use std::io::{Error, ErrorKind, Read};
 
+/// Reads a varint from a [Read] implementation.
 pub fn read<R: Read>(reader: &mut R) -> Result<i64> {
     let mut buf = [0 as u8; 1];
     let mut value: u64 = 0;
@@ -29,6 +32,7 @@ pub fn read<R: Read>(reader: &mut R) -> Result<i64> {
     .into())
 }
 
+/// Encodes a varint into a buffer, returning the number of bytes written.
 pub fn encode(buf: &mut [u8; 8], value: i64) -> usize {
     // ZigZag encoding
     let mut value = ((value << 1) ^ (value >> 63)) as u64;
