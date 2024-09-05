@@ -1,3 +1,5 @@
+//! Streams to read and write ABCI messages.
+
 use crate::error::{Error, Result};
 use crate::varint;
 use log::trace;
@@ -9,6 +11,7 @@ use tendermint_proto::v0_34::abci::*;
 
 pub const MAX_MESSAGE_LENGTH: usize = 4 * 1024 * 1024; // TODO: make configurable?
 
+/// A connection that reads and writes ABCI messages.
 pub struct Connection {
     socket: TcpStream, // TODO: make generic for io::Read/Write
     saw_info: bool,
@@ -16,6 +19,7 @@ pub struct Connection {
 }
 
 impl Connection {
+    /// Create a new connection from a TCP socket.
     pub fn new(socket: TcpStream) -> Result<Self> {
         Ok(Connection {
             socket,
@@ -24,6 +28,7 @@ impl Connection {
         })
     }
 
+    /// Read a message from the connection, blocking until one is available.
     pub fn read(&mut self) -> Result<Request> {
         let length = varint::read(&mut self.socket)? as usize;
         if length > MAX_MESSAGE_LENGTH {
@@ -59,6 +64,7 @@ impl Connection {
         Ok(req)
     }
 
+    /// Write a message to the connection.
     pub fn write(&mut self, res: Response) -> Result<()> {
         trace!(">> {:?}", res);
 
@@ -79,10 +85,12 @@ impl Connection {
         Ok(())
     }
 
+    /// Close the connection.
     pub fn close(mut self) -> Result<()> {
         self.end()
     }
 
+    /// Shut down the inner TCP socket.
     fn end(&mut self) -> Result<()> {
         self.socket.shutdown(std::net::Shutdown::Both)?;
         // read and write threads will end as the connection will now error when
