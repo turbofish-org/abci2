@@ -104,7 +104,7 @@ impl Drop for Connection {
         match self.end() {
             Ok(_) => (),
             Err(Error::IO(err)) if err.kind() == std::io::ErrorKind::NotConnected => (),
-            Err(e) => panic!("Error closing connection: {:?}", e),
+            Err(e) => Err(e).unwrap(),
         }
     }
 }
