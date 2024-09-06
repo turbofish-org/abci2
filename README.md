@@ -47,7 +47,7 @@ loop {
 
 For a more complete example, see [examples/simple.rs](https://github.com/turbofish-org/abci2/blob/master/examples/simple.rs) (you can run it via `cargo run --example simple`).
 
-abci2 is currently used by [Nomic](https://github.com/nomic-io/nomic), a blockchain powering decentralized custody of Bitcoin, built on [Orga](https://github.com/turbofish-org/orga).
+abci2 is currently used by [Orga](https://github.com/turbofish-org/orga), the framework that powers [Nomic](https://github.com/nomic-io/nomic), a blockchain powering decentralized custody of Bitcoin.
 
 ### Rebuild Protobuf
 
